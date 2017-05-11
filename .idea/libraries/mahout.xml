@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="mahout">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/libraries/hdfs/src/main/java" />
+    </SOURCES>
+  </library>
+</component>
