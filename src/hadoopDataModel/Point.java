@@ -3,13 +3,14 @@ package hadoopDataModel;
 /**
  * Created by Boris on 24/04/2017.
  */
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.WritableComparable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 
 public class Point implements WritableComparable<Point>{

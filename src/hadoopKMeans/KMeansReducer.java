@@ -5,12 +5,16 @@ import Utils.FileLogger;
 import hadoopDataModel.Centroid;
 import hadoopDataModel.Point;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,18 +54,26 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
 
         int iteraz=0;
         for (Point point : pointList){ //scrivo nel constesto i nuovi centroidi
-
+            Text keyText;
             result+=(counter);
             if(iteraz==0){
                 FileLogger.printCleanup(ArrayOP.ArrayMath.toString(centroidTmp.getVector()), centroidTmp.getClusterID(), conf.get("centroids_path_toWrite"));
+                keyText = new Text("_" +ArrayOP.ArrayMath.toString(centroidTmp.getVector())+"\n\n");
+            }
+            else{
+                keyText = new Text("");
             }
             iteraz++;
-
-            Text keyText = new Text(ArrayOP.ArrayMath.toString(centroidTmp.getVector()) +"  centroid ID:"+ ArrayOP.ArrayMath.toString(centroidTmp.getCentroidID()));
+            /*Text keyText = new Text(ArrayOP.ArrayMath.toString(centroidTmp.getVector()) +"  centroid ID:"+ ArrayOP.ArrayMath.toString(centroidTmp.getCentroidID()));
             Text valueText = new Text("\n punto di ID:" + ArrayOP.ArrayMath.toString(point.getPointID()) + " con coordinate: " + ArrayOP.ArrayMath.toString(point.getVector())+"\n");
+         */
+            Text valueText = new Text(ArrayOP.ArrayMath.toString(point.getVector()));
             context.write(keyText, valueText);
         }
-        FileLogger.printReducer(result);
+
+        context.write(new Text(""), new Text("")); //solo per motivi di formato
+
+        //FileLogger.printReducer(result);
         if (key.hasConverged(centroidTmp)){ //avvenuta convergenza
             context.getCounter(Counter.CONVERGED).increment(1);
         }

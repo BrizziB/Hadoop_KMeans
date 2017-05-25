@@ -2,12 +2,10 @@ package hadoopKMeans;
 
 import hadoopDataModel.Centroid;
 import hadoopDataModel.Point;
-import hadoopDataModel.VectorWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -15,12 +13,6 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 
-/**
- * Created by Boris on 27/04/2017.
- *Il mapper ed il reducer funzionano! Ho dovuto eliminare il Combiner che mi dava noia nell'output
- * adesso vanno fatti ciclare finchè non si stabilizzano.
- * ci sarà quindi da preparare una struttura decente di cartelle per permettere l'iterabilità
- */
 
 public class KMeansJob extends Configured implements Tool{
 
@@ -35,27 +27,32 @@ public class KMeansJob extends Configured implements Tool{
         Configuration conf = getConf();
         conf.set("num_iteration", numIteration + "");
 
-        Path outputRootPath = new Path("output");
-        Path inputPath = new Path("input");
-        FileSystem fs = FileSystem.get(conf);
-        if (fs.exists(outputRootPath)) {
-            fs.delete(outputRootPath, true);
-        }
+        //Path outputRootPath = new Path("../tmp_points");
+
+        Path inputPath = new Path(args[0]);
+        Path outputRootPath = new Path(args[1]);
+        String centersRootPath = args[2];//("centers");
+        FileSystem fs = FileSystem.get(outputRootPath.toUri(), conf);
+
         boolean success;
         long counter;
         int maxIterNum = 5;
         boolean maxIterNumReached = false;
         int numCentroids = 3;
 
+        if (fs.exists(outputRootPath)) {
+            fs.delete(outputRootPath, true);
+        }
         do{
-            conf.set("centroids_path_toRead", "centers/centers_"+numIteration+".txt");
-            conf.set("centroids_path_toWrite", "centers/centers_"+(numIteration+1)+".txt");
+            conf.set("centroids_path_toRead", centersRootPath+"/centers_"+numIteration+".txt");
+            conf.set("centroids_path_toWrite", centersRootPath+"/centers_"+(numIteration+1)+".txt");
             Path outputPath = new Path(outputRootPath.toString()+"/iteraz_"+numIteration);
 
             Job job = Job.getInstance(conf, "KmeansClustering_"+numIteration);
             job.setJarByClass(KMeansJob.class);
             job.setMapperClass(KMeansMapper.class);
             job.setReducerClass(KMeansReducer.class);
+            job.setNumReduceTasks(3);
 
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
@@ -66,18 +63,15 @@ public class KMeansJob extends Configured implements Tool{
             success = job.waitForCompletion(true);
             numIteration++;
 
-            if(maxIterNum > 5){
+            if(maxIterNum > 20){
                 success = false;
                 maxIterNumReached=true;
             }
-
             counter = job.getCounters().findCounter(KMeansReducer.Counter.CONVERGED).getValue();
-
-
         }
 
         while (counter < numCentroids && !maxIterNumReached);
-        return success? 0:1;
+        return success? 0:7;
     }
 
 

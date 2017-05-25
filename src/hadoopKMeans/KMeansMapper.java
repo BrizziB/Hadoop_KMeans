@@ -7,17 +7,20 @@ import hadoopDataModel.Centroid;
 import hadoopDataModel.Point;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,10 +41,18 @@ public class KMeansMapper extends Mapper<LongWritable, Text, Centroid, Point> {
         super.setup(context);
         Configuration conf = context.getConfiguration();
         Path centers = new Path(conf.get("centroids_path_toRead"));//new Path("centers/centers_0.txt");//(conf.get("centroid.path")); // ("centers/cen.seq");//
-        FileSystem fs = FileSystem.get(conf);
+/*        FileSystem fs = FileSystem.get(conf);
         BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(centers)));
         String line;
-        line=br.readLine();
+        line=br.readLine(); //versione locale   */
+
+        FileSystem fs = FileSystem.get(URI.create(centers.toString()), conf);
+        FSDataInputStream fsInputStream = fs.open(centers);
+        BufferedReader br = new BufferedReader(new InputStreamReader(fsInputStream));
+        String line = br.readLine();//versione per EMR ma va bene anche in locale
+
+
+
         int index=0;
         int length;
         while(line != null) {
@@ -56,11 +67,13 @@ public class KMeansMapper extends Mapper<LongWritable, Text, Centroid, Point> {
             index++;
             line = br.readLine();
         }
+        br.close();
+        fsInputStream.close();
         conf.set("num_centroids", ""+(centroids.size()));
     }
     @Override
     protected void map(LongWritable key, Text points, Context context)throws IOException, InterruptedException{
-        //leggo da file i punti e li inserisco in points
+        //leggo i punti e li inserisco in points
         String[]lines = points.toString().split("\\r?\\n");//.split(System.getProperty("line.separator"));
         int length;
         double minDist = Double.MAX_VALUE;

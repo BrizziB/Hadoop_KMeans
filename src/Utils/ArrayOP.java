@@ -3,8 +3,6 @@ package Utils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 
-import java.lang.reflect.Array;
-
 /**
  * Created by Boris on 03/05/2017.
  */
