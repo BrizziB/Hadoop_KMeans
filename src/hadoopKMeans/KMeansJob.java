@@ -44,15 +44,16 @@ public class KMeansJob extends Configured implements Tool{
             fs.delete(outputRootPath, true);
         }
         do{
-            conf.set("centroids_path_toRead", centersRootPath+"/centers_"+numIteration+".txt");
-            conf.set("centroids_path_toWrite", centersRootPath+"/centers_"+(numIteration+1)+".txt");
+            conf.set("num_centroids", numCentroids+"");
+            conf.set("centroids_path_toRead", centersRootPath+"/centers_"+numIteration);
+            conf.set("centroids_path_toWrite", centersRootPath+"/centers_"+(numIteration+1));
             Path outputPath = new Path(outputRootPath.toString()+"/iteraz_"+numIteration);
 
             Job job = Job.getInstance(conf, "KmeansClustering_"+numIteration);
             job.setJarByClass(KMeansJob.class);
             job.setMapperClass(KMeansMapper.class);
             job.setReducerClass(KMeansReducer.class);
-            job.setNumReduceTasks(3);
+            job.setNumReduceTasks(1);
 
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
@@ -97,7 +98,7 @@ public class KMeansJob extends Configured implements Tool{
 
 
 
-        String centroidsPath = "centers/centers_0.txt";
+        String centroidsPath = "centers/centers_0_0.txt";
         Path inputPath = new Path("input");
         Path centersPath = new Path(centroidsPath);
         Path outputPath = new Path ("output");

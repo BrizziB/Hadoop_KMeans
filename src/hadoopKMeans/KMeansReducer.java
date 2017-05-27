@@ -12,8 +12,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,6 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
     }
     private int counter=0;
     private final List<Centroid> centroids = new ArrayList<>();
-
     @Override
     //il reduce prende tutte le coppie con medesima key
     protected void reduce(Centroid key, Iterable<Point> values, Context context)throws IOException, InterruptedException{
@@ -41,24 +39,30 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
         boolean oldCentroid = false;
         for(Point pt : values){
             pointList.add( new Point(pt.getVector(), pt.getPointID()) );
-
             if (newCenter == null)
                 newCenter = pt.getVector();
             else
                 newCenter = ArrayOP.ArrayMath.sumArrays(newCenter, pt.getVector());
         }
-
         newCenter = ArrayOP.ArrayMath.divideBy(newCenter, pointList.size());
         Centroid centroidTmp = new Centroid(newCenter, key.getCentroidID(), key.getClusterID());
             centroids.add(centroidTmp);
-
         int iteraz=0;
         for (Point point : pointList){ //scrivo nel constesto i nuovi centroidi
             Text keyText;
             result+=(counter);
             if(iteraz==0){
-                FileLogger.printCleanup(ArrayOP.ArrayMath.toString(centroidTmp.getVector()), centroidTmp.getClusterID(), conf.get("centroids_path_toWrite"));
-                keyText = new Text("_" +ArrayOP.ArrayMath.toString(centroidTmp.getVector())+"\n\n");
+                Path writeCentersPath = new Path(conf.get("centroids_path_toWrite")+"_"+key.getCentroidID()+".txt");
+                FileSystem fs = FileSystem.get(URI.create(writeCentersPath.toString()), conf);
+                if (fs.exists(writeCentersPath)) {
+                    fs.delete(writeCentersPath, true);
+                }
+                FSDataOutputStream fsDataOutputStream = fs.create(writeCentersPath);
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream));
+                bw.write(ArrayOP.ArrayMath.toString(centroidTmp.getVector()));
+                keyText = new Text(ArrayOP.ArrayMath.toString(centroidTmp.getVector())+"\n\n");
+                bw.close();
+                fsDataOutputStream.close();
             }
             else{
                 keyText = new Text("");
@@ -73,7 +77,6 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
 
         context.write(new Text(""), new Text("")); //solo per motivi di formato
 
-        //FileLogger.printReducer(result);
         if (key.hasConverged(centroidTmp)){ //avvenuta convergenza
             context.getCounter(Counter.CONVERGED).increment(1);
         }

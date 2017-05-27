@@ -43,7 +43,7 @@ public final class FileLogger {
     }
 
     public static void printCleanup(int content)throws IOException{
-        Path outPath = new Path("centers/centers_0.txt");
+        Path outPath = new Path("centers/centers_0_0.txt");
         FileWriter fileWriter = new FileWriter(outPath.toString(), true);
         BufferedWriter writer = new BufferedWriter(fileWriter);
         writer.newLine();

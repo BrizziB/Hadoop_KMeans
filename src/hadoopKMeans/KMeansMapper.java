@@ -17,9 +17,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,36 +38,33 @@ public class KMeansMapper extends Mapper<LongWritable, Text, Centroid, Point> {
         // vengono messi su file nel cleanup() del reducer
         super.setup(context);
         Configuration conf = context.getConfiguration();
-        Path centers = new Path(conf.get("centroids_path_toRead"));//new Path("centers/centers_0.txt");//(conf.get("centroid.path")); // ("centers/cen.seq");//
-/*        FileSystem fs = FileSystem.get(conf);
-        BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(centers)));
-        String line;
-        line=br.readLine(); //versione locale   */
+        Path centers = new Path(conf.get("centroids_path_toRead"));//new Path("centers/centers_0_0.txt");//(conf.get("centroid.path")); // ("centers/cen.seq");//
 
-        FileSystem fs = FileSystem.get(URI.create(centers.toString()), conf);
-        FSDataInputStream fsInputStream = fs.open(centers);
-        BufferedReader br = new BufferedReader(new InputStreamReader(fsInputStream));
-        String line = br.readLine();//versione per EMR ma va bene anche in locale
-
-
-
+        int numCentroids =Integer.parseInt(conf.get("num_centroids"));
         int index=0;
-        int length;
-        while(line != null) {
-            String[] tmp = line.split("\\s+");
-            length = tmp.length;
-            DoubleWritable[] tmpVector = new DoubleWritable[length];
-            for (int i = 0; i < length; i++) {
-                tmpVector[i] = new DoubleWritable(Double.parseDouble(tmp[i]));
+        for (int i=0; i<numCentroids; i++){
+            FileSystem fs = FileSystem.get(URI.create(centers.toString() +"_"+i+".txt"), conf);
+            FSDataInputStream fsInputStream = fs.open(new Path(centers.toString() +"_"+i+".txt"));
+            BufferedReader br = new BufferedReader(new InputStreamReader(fsInputStream));
+            String line = br.readLine();
+
+
+            int length;
+            while(line != null) {
+                String[] tmp = line.split("\\s+");
+                length = tmp.length;
+                DoubleWritable[] tmpVector = new DoubleWritable[length];
+                for (int j = 0; j < length; j++) {
+                    tmpVector[j] = new DoubleWritable(Double.parseDouble(tmp[j]));
+                }
+                Centroid centroid = new Centroid(tmpVector, new IntWritable(index), index);
+                this.centroids.add(centroid);
+                index++;
+                line = br.readLine();
             }
-            Centroid centroid = new Centroid(tmpVector, new IntWritable(index), index);
-            this.centroids.add(centroid);
-            index++;
-            line = br.readLine();
+            br.close();
+            fsInputStream.close();
         }
-        br.close();
-        fsInputStream.close();
-        conf.set("num_centroids", ""+(centroids.size()));
     }
     @Override
     protected void map(LongWritable key, Text points, Context context)throws IOException, InterruptedException{
