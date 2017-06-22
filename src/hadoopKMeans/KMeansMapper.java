@@ -28,9 +28,7 @@ import java.util.List;
 public class KMeansMapper extends Mapper<LongWritable, Text, Centroid, Point> {
 
     private final List<Centroid> centroids = new ArrayList<>();
-    private final List<Point> points = new ArrayList<>();
     private EuclideanDistance distanceMeasurer = EuclideanDistance.getEuclideanDistance();
-    public static final Log log = LogFactory.getLog(KMeansMapper.class);
     @Override
     @SuppressWarnings("deprecation")
     protected void setup(Context context)throws IOException, InterruptedException{

@@ -26,6 +26,7 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
     public static enum Counter {
         CONVERGED
     }
+
     private int counter=0;
     private final List<Centroid> centroids = new ArrayList<>();
     @Override
@@ -68,9 +69,6 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
                 keyText = new Text("");
             }
             iteraz++;
-            /*Text keyText = new Text(ArrayOP.ArrayMath.toString(centroidTmp.getVector()) +"  centroid ID:"+ ArrayOP.ArrayMath.toString(centroidTmp.getCentroidID()));
-            Text valueText = new Text("\n punto di ID:" + ArrayOP.ArrayMath.toString(point.getPointID()) + " con coordinate: " + ArrayOP.ArrayMath.toString(point.getVector())+"\n");
-         */
             Text valueText = new Text(ArrayOP.ArrayMath.toString(point.getVector()));
             context.write(keyText, valueText);
         }
