@@ -51,7 +51,7 @@ public class KMeansJob extends Configured implements Tool {
             job.setJarByClass(KMeansJob.class);
             job.setMapperClass(KMeansMapper.class);
             job.setReducerClass(KMeansReducer.class);
-            job.setNumReduceTasks(numCentroids);
+            job.setNumReduceTasks(2);
 
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);
