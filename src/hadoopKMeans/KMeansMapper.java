@@ -41,33 +41,41 @@ public class KMeansMapper extends Mapper<LongWritable, Text, Centroid, Point> {
         int numCentroids =Integer.parseInt(conf.get("num_centroids"));
         int index=0;
         for (int i=0; i<numCentroids; i++){
-            FileSystem fs = FileSystem.get(URI.create(centers.toString() +"_"+i+".txt"), conf);
-            FSDataInputStream fsInputStream = fs.open(new Path(centers.toString() +"_"+i+".txt"));
-            BufferedReader br = new BufferedReader(new InputStreamReader(fsInputStream));
-            String line = br.readLine();
+            try{
+                FileSystem fs = FileSystem.get(URI.create(centers.toString() +"_"+i+".txt"), conf);
+                FSDataInputStream fsInputStream = fs.open(new Path(centers.toString() +"_"+i+".txt"));
+                BufferedReader br = new BufferedReader(new InputStreamReader(fsInputStream));
+                String line = br.readLine();
 
 
-            int length;
-            while(line != null) {
-                String[] tmp = line.split("\\s+");
-                length = tmp.length;
-                DoubleWritable[] tmpVector = new DoubleWritable[length];
-                for (int j = 0; j < length; j++) {
-                    tmpVector[j] = new DoubleWritable(Double.parseDouble(tmp[j]));
+                int length;
+                while(line != null) {
+                    String[] tmp = line.split("\\s+");
+                    length = tmp.length;
+                    DoubleWritable[] tmpVector = new DoubleWritable[length];
+                    for (int j = 0; j < length; j++) {
+                        tmpVector[j] = new DoubleWritable(Double.parseDouble(tmp[j]));
+                    }
+                    Centroid centroid = new Centroid(tmpVector, new IntWritable(index), index);
+                    this.centroids.add(centroid);
+                    index++;
+                    line = br.readLine();
                 }
-                Centroid centroid = new Centroid(tmpVector, new IntWritable(index), index);
+                br.close();
+                fsInputStream.close();
+            }catch (IOException e){//un centroide è sparito perchè non aveva più punti
+                Centroid centroid = new Centroid(new IntWritable(index), index);
                 this.centroids.add(centroid);
                 index++;
-                line = br.readLine();
+                context.getCounter(KMeansReducer.Counter.CONVERGED).increment(1);
             }
-            br.close();
-            fsInputStream.close();
         }
+
     }
     @Override
     protected void map(LongWritable key, Text points, Context context)throws IOException, InterruptedException{
         //leggo i punti e li inserisco in points
-        String[]lines = points.toString().split("\\r?\\n");//.split(System.getProperty("line.separator"));
+        String[]lines = points.toString().split("\\r?\\n");
         int length;
         double minDist = Double.MAX_VALUE;
         String result ="\n";

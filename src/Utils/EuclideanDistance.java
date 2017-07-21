@@ -17,6 +17,10 @@ public final class EuclideanDistance {
 
     public double measureDistance(DoubleWritable[] vect1, DoubleWritable[] vect2){
 
+        if(vect1==null || vect2 == null){
+            return Double.MAX_VALUE;
+        }
+
         double tot=0;
         int length = vect1.length;
         double diff;

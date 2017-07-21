@@ -58,7 +58,11 @@ public class Centroid implements WritableComparable<Centroid> {
         this.centroidID = centroidID;
         this.clusterID = id;
     }
-
+    public Centroid(IntWritable centroidID, int id){//per centroidi degeneri
+        super();
+        this.centroidID = centroidID;
+        this.clusterID = id;
+    }
     public static Centroid read(DataInput in)throws IOException {
         Centroid p = new Centroid();
         p.readFields(in);
@@ -83,7 +87,7 @@ public class Centroid implements WritableComparable<Centroid> {
         return compareVector(vector, otherPoint.getVector());
     }
 
-    @Override //se qualcosa non va migliora questo
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = centroidID.hashCode();
@@ -138,7 +142,6 @@ public class Centroid implements WritableComparable<Centroid> {
         if(Math.abs((ArrayOP.ArrayMath.subtractArrays(this.getVector(), newCentroid.getVector())).get())<0.001)
             return true;
         return false;
-
     }
 
 

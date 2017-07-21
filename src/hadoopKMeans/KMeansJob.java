@@ -30,7 +30,7 @@ public class KMeansJob extends Configured implements Tool {
         Path inputPath = new Path(args[0]);
         Path outputRootPath = new Path(args[1]);
         String centersRootPath = args[2];//("centers");
-        int numCentroids = Integer.parseInt(args[3]);
+        int numCentroids = 3;// Integer.parseInt(args[3]);
         FileSystem fs = FileSystem.get(outputRootPath.toUri(), conf);
         boolean success;
         long counter;
@@ -40,6 +40,7 @@ public class KMeansJob extends Configured implements Tool {
         if (fs.exists(outputRootPath)) {
             fs.delete(outputRootPath, true);
         }
+
         long startTime = System.nanoTime();
         do {
             conf.set("num_centroids", numCentroids + "");
@@ -51,7 +52,7 @@ public class KMeansJob extends Configured implements Tool {
             job.setJarByClass(KMeansJob.class);
             job.setMapperClass(KMeansMapper.class);
             job.setReducerClass(KMeansReducer.class);
-            job.setNumReduceTasks(2);
+            job.setNumReduceTasks(numCentroids);// quando questo valore è troppo piccolo si verificano problemi
 
             FileInputFormat.addInputPath(job, inputPath);
             FileOutputFormat.setOutputPath(job, outputPath);

@@ -47,33 +47,40 @@ public class KMeansReducer extends Reducer<Centroid, Point, Text, Text> {
         }
         newCenter = ArrayOP.ArrayMath.divideBy(newCenter, pointList.size());
         Centroid centroidTmp = new Centroid(newCenter, key.getCentroidID(), key.getClusterID());
-            centroids.add(centroidTmp);
+        centroids.add(centroidTmp);
         int iteraz=0;
-        for (Point point : pointList){ //scrivo nel constesto i nuovi centroidi
+
+        Path writeCentersPath = new Path(conf.get("centroids_path_toWrite")+"_"+key.getCentroidID()+".txt");
+        FileSystem fs = FileSystem.get(URI.create(writeCentersPath.toString()), conf);
+        if (fs.exists(writeCentersPath)) {
+            fs.delete(writeCentersPath, true);
+        }
+        FSDataOutputStream fsDataOutputStream = fs.create(writeCentersPath);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream));
+        bw.write("");
+
+
+        for (Point point : pointList){
             Text keyText;
             result+=(counter);
             if(iteraz==0){
-                Path writeCentersPath = new Path(conf.get("centroids_path_toWrite")+"_"+key.getCentroidID()+".txt");
-                FileSystem fs = FileSystem.get(URI.create(writeCentersPath.toString()), conf);
-                if (fs.exists(writeCentersPath)) {
-                    fs.delete(writeCentersPath, true);
-                }
-                FSDataOutputStream fsDataOutputStream = fs.create(writeCentersPath);
-                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream));
+                //write new centroid to next iteration centers file
                 bw.write(ArrayOP.ArrayMath.toString(centroidTmp.getVector()));
+                //casting centroid to text in order to be written to context
                 keyText = new Text(ArrayOP.ArrayMath.toString(centroidTmp.getVector())+"\n\n");
-                bw.close();
-                fsDataOutputStream.close();
             }
             else{
                 keyText = new Text("");
             }
+            bw.close();
+            fsDataOutputStream.close();
             iteraz++;
+            //casting points to text in order to be written to context
             Text valueText = new Text(ArrayOP.ArrayMath.toString(point.getVector()));
             context.write(keyText, valueText);
         }
 
-        context.write(new Text(""), new Text("")); //solo per motivi di formato
+        context.write(new Text(""), new Text(""));
 
         if (key.hasConverged(centroidTmp)){ //avvenuta convergenza
             context.getCounter(Counter.CONVERGED).increment(1);
